@@ -4,7 +4,6 @@ plugins {
     id 'maven-publish'
     id 'idea'
 }
-
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
