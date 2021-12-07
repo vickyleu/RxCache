@@ -24,12 +24,15 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import io.reactivex.Observable;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.annotation.Generated;
 import javax.lang.model.element.Modifier;
+
+import io.reactivex.rxjava3.core.Observable;
 
 final class BrewJavaFile {
 
@@ -106,27 +109,27 @@ final class BrewJavaFile {
     }
 
     private void setReturnEvictForEvictProvider(MethodSpec.Builder builder, String methodName) {
-        builder.addStatement("return proxy."+methodName+"(elements, new $T(true))", EvictProvider.class);
+        builder.addStatement("return proxy." + methodName + "(elements, new $T(true))", EvictProvider.class);
     }
 
     private void setReturnEvictForEvictDynamicKey(MethodSpec.Builder builder, String methodName) {
-        builder.addStatement("return proxy."+methodName+"(elements, dynamicKey, new $T(true))", EvictDynamicKey.class);
+        builder.addStatement("return proxy." + methodName + "(elements, dynamicKey, new $T(true))", EvictDynamicKey.class);
     }
 
     private void setReturnEvictForEvictDynamicKeyGroup(MethodSpec.Builder builder, String methodName) {
-        builder.addStatement("return proxy."+methodName+"(elements, dynamicKeyGroup, new $T(true))", EvictDynamicKeyGroup.class);
+        builder.addStatement("return proxy." + methodName + "(elements, dynamicKeyGroup, new $T(true))", EvictDynamicKeyGroup.class);
     }
 
     private void setCacheForEvictProvider(MethodSpec.Builder builder, ParameterizedTypeName observable, ParameterizedTypeName arrayList, String methodName, String typeName) {
-        builder.addStatement("$T oCache = proxy."+methodName+"(Observable.<List<"+typeName+">>just(new $T()), new EvictProvider(false))", observable, arrayList);
+        builder.addStatement("$T oCache = proxy." + methodName + "(Observable.<List<" + typeName + ">>just(new $T()), new EvictProvider(false))", observable, arrayList);
     }
 
     private void setCacheForEvictDynamicKey(MethodSpec.Builder builder, ParameterizedTypeName observable, ParameterizedTypeName arrayList, String methodName, String typeName) {
-        builder.addStatement("$T oCache = proxy."+methodName+"(Observable.<List<"+typeName+">>just(new $T()), dynamicKey, new EvictDynamicKey(false))", observable, arrayList);
+        builder.addStatement("$T oCache = proxy." + methodName + "(Observable.<List<" + typeName + ">>just(new $T()), dynamicKey, new EvictDynamicKey(false))", observable, arrayList);
     }
 
     private void setCacheForEvictDynamicKeyGroup(MethodSpec.Builder builder, ParameterizedTypeName observable, ParameterizedTypeName arrayList, String methodName, String typeName) {
-        builder.addStatement("$T oCache = proxy."+methodName+"(Observable.<List<"+typeName+">>just(new $T()), dynamicKeyGroup, new EvictDynamicKeyGroup(false))", observable, arrayList);
+        builder.addStatement("$T oCache = proxy." + methodName + "(Observable.<List<" + typeName + ">>just(new $T()), dynamicKeyGroup, new EvictDynamicKeyGroup(false))", observable, arrayList);
     }
 
 

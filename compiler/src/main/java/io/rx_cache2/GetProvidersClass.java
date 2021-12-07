@@ -5,12 +5,15 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
-import io.reactivex.Observable;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
+
+import io.reactivex.rxjava3.core.Observable;
 
 final class GetProvidersClass {
 
@@ -112,7 +115,7 @@ final class GetProvidersClass {
     }
 
     private boolean hasSymbol(List<Symbol.VarSymbol> symbols, Class candidateClass) {
-        for (Symbol.VarSymbol symbol: symbols) {
+        for (Symbol.VarSymbol symbol : symbols) {
             String symbolClassName = symbol.type.toString();
             String candidateClassName = candidateClass.getCanonicalName();
             if (symbolClassName.equals(candidateClassName)) return true;

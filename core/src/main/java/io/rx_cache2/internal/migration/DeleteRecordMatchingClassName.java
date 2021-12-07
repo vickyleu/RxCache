@@ -16,7 +16,7 @@
 
 package io.rx_cache2.internal.migration;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import java.util.List;
 import javax.inject.Inject;
 

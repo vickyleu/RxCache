@@ -16,86 +16,85 @@
 
 package io.rx_cache2.internal;
 
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Maybe;
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.Single;
-import io.rx_cache2.EncryptKey;
-import io.rx_cache2.Migration;
-import io.rx_cache2.MigrationCache;
-import io.rx_cache2.SchemeMigration;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
+
+import io.reactivex.rxjava3.core.BackpressureStrategy;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.Single;
+import io.rx_cache2.EncryptKey;
+import io.rx_cache2.Migration;
+import io.rx_cache2.MigrationCache;
+import io.rx_cache2.SchemeMigration;
 
 public final class ProxyProviders implements InvocationHandler {
-  private final io.rx_cache2.internal.ProcessorProviders processorProviders;
-  private final ProxyTranslator proxyTranslator;
+    private final io.rx_cache2.internal.ProcessorProviders processorProviders;
+    private final ProxyTranslator proxyTranslator;
 
-  public ProxyProviders(RxCache.Builder builder, Class<?> providersClass) {
-    processorProviders = DaggerRxCacheComponent.builder()
-        .rxCacheModule(new RxCacheModule(builder.getCacheDirectory(),
-            builder.useExpiredDataIfLoaderNotAvailable(),
-            builder.getMaxMBPersistenceCache(), getEncryptKey(providersClass),
-            getMigrations(providersClass), builder.getJolyglot()))
-        .build().providers();
+    public ProxyProviders(RxCache.Builder builder, Class<?> providersClass) {
+        processorProviders = DaggerRxCacheComponent.builder()
+                .rxCacheModule(new RxCacheModule(builder.getCacheDirectory(),
+                        builder.useExpiredDataIfLoaderNotAvailable(),
+                        builder.getMaxMBPersistenceCache(), getEncryptKey(providersClass),
+                        getMigrations(providersClass), builder.getJolyglot()))
+                .build().providers();
 
-    proxyTranslator = new ProxyTranslator();
-  }
-
-  public String getEncryptKey(Class<?> providersClass) {
-    EncryptKey encryptKey = providersClass.getAnnotation(EncryptKey.class);
-    if (encryptKey == null) return null;
-    return encryptKey.value();
-  }
-
-  public List<MigrationCache> getMigrations(Class<?> providersClass) {
-    List<MigrationCache> migrations = new ArrayList<>();
-
-    Annotation annotation = providersClass.getAnnotation(SchemeMigration.class);
-    if (annotation == null) return migrations;
-
-    SchemeMigration schemeMigration = (SchemeMigration) annotation;
-
-    for (Migration migration : schemeMigration.value()) {
-      migrations.add(new MigrationCache(migration.version(),
-          migration.evictClasses()));
+        proxyTranslator = new ProxyTranslator();
     }
 
-    return migrations;
-  }
+    public String getEncryptKey(Class<?> providersClass) {
+        EncryptKey encryptKey = providersClass.getAnnotation(EncryptKey.class);
+        if (encryptKey == null) return null;
+        return encryptKey.value();
+    }
 
-  @Override public Object invoke(final Object proxy, final Method method, final Object[] args)
-      throws Throwable {
-    return Observable.defer(new Callable<ObservableSource<?>>() {
-      @Override public ObservableSource<?> call() throws Exception {
-        Observable observable =
-            processorProviders.process(proxyTranslator.processMethod(method, args));
-        Class<?> methodType = method.getReturnType();
+    public List<MigrationCache> getMigrations(Class<?> providersClass) {
+        List<MigrationCache> migrations = new ArrayList<>();
 
-        if (methodType == Observable.class) return Observable.just(observable);
+        Annotation annotation = providersClass.getAnnotation(SchemeMigration.class);
+        if (annotation == null) return migrations;
 
-        if (methodType == Single.class) return Observable.just(Single.fromObservable(observable));
+        SchemeMigration schemeMigration = (SchemeMigration) annotation;
 
-        if (methodType == Maybe.class) {
-          return Observable.just(Maybe.fromSingle(Single.fromObservable(observable)));
+        for (Migration migration : schemeMigration.value()) {
+            migrations.add(new MigrationCache(migration.version(),
+                    migration.evictClasses()));
         }
 
-        if (method.getReturnType() == io.reactivex.Flowable.class) {
-          return Observable.just(observable.toFlowable(BackpressureStrategy.MISSING));
-        }
+        return migrations;
+    }
 
-        String errorMessage = method.getName() + io.rx_cache2.internal.Locale.INVALID_RETURN_TYPE;
-        throw new RuntimeException(errorMessage);
-      }
-    }).blockingFirst();
-  }
+    @Override
+    public Object invoke(final Object proxy, final Method method, final Object[] args) {
+        return Observable.defer(() -> {
+            Observable observable =
+                    processorProviders.process(proxyTranslator.processMethod(method, args));
+            Class<?> methodType = method.getReturnType();
 
-  Observable<Void> evictAll() {
-    return processorProviders.evictAll();
-  }
+            if (methodType == Observable.class) return Observable.just(observable);
+
+            if (methodType == Single.class)
+                return Observable.just(Single.fromObservable(observable));
+
+            if (methodType == Maybe.class) {
+                return Observable.just(Maybe.fromSingle(Single.fromObservable(observable)));
+            }
+
+            if (method.getReturnType() == Flowable.class) {
+                return Observable.just(observable.toFlowable(BackpressureStrategy.MISSING));
+            }
+
+            String errorMessage = method.getName() + Locale.INVALID_RETURN_TYPE;
+            throw new RuntimeException(errorMessage);
+        }).blockingFirst();
+    }
+
+    Observable<Void> evictAll() {
+        return processorProviders.evictAll();
+    }
 }

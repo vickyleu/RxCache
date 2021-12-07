@@ -16,100 +16,99 @@
 
 package io.rx_cache2.internal.cache;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableEmitter;
-import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
+import java.util.List;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableEmitter;
+import io.reactivex.rxjava3.core.ObservableOnSubscribe;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import io.rx_cache2.internal.Locale;
 import io.rx_cache2.internal.Memory;
 import io.rx_cache2.internal.Persistence;
 import io.rx_cache2.internal.Record;
-import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 @Singleton
 public final class EvictExpirableRecordsPersistence extends Action {
-  private final Integer maxMgPersistenceCache;
-  private final String encryptKey;
-  private static final float PERCENTAGE_MEMORY_STORED_TO_START = 0.95f;
-  //VisibleForTesting
-  public static final float PERCENTAGE_MEMORY_STORED_TO_STOP = 0.7f;
-  private final Observable<String> oEvictingTask;
-  private boolean couldBeExpirableRecords, isEncrypted;
+    private final Integer maxMgPersistenceCache;
+    private final String encryptKey;
+    private static final float PERCENTAGE_MEMORY_STORED_TO_START = 0.95f;
+    //VisibleForTesting
+    public static final float PERCENTAGE_MEMORY_STORED_TO_STOP = 0.7f;
+    private final Observable<String> oEvictingTask;
+    private boolean couldBeExpirableRecords, isEncrypted;
 
-  @Inject public EvictExpirableRecordsPersistence(Memory memory, Persistence persistence,
-      Integer maxMgPersistenceCache, String encryptKey) {
-    super(memory, persistence);
-    this.maxMgPersistenceCache = maxMgPersistenceCache;
-    this.encryptKey = encryptKey;
-    this.couldBeExpirableRecords = true;
-    this.oEvictingTask = oEvictingTask();
-  }
+    @Inject
+    public EvictExpirableRecordsPersistence(Memory memory, Persistence persistence,
+                                            Integer maxMgPersistenceCache, String encryptKey) {
+        super(memory, persistence);
+        this.maxMgPersistenceCache = maxMgPersistenceCache;
+        this.encryptKey = encryptKey;
+        this.couldBeExpirableRecords = true;
+        this.oEvictingTask = oEvictingTask();
+    }
 
-  Observable<String> startTaskIfNeeded(boolean isEncrypted) {
-    this.isEncrypted = isEncrypted;
-    oEvictingTask.subscribe();
-    return oEvictingTask;
-  }
+    Observable<String> startTaskIfNeeded(boolean isEncrypted) {
+        this.isEncrypted = isEncrypted;
+        oEvictingTask.subscribe();
+        return oEvictingTask;
+    }
 
-  private Observable<String> oEvictingTask() {
-    Observable<String> oEvictingTask = Observable.create(new ObservableOnSubscribe<String>() {
-      @Override public void subscribe(ObservableEmitter<String> emitter) throws Exception {
-        if (!couldBeExpirableRecords) {
-          emitter.onNext(Locale.RECORD_CAN_NOT_BE_EVICTED_BECAUSE_NO_ONE_IS_EXPIRABLE);
-          emitter.onComplete();
-          return;
-        }
+    private Observable<String> oEvictingTask() {
+        Observable<String> oEvictingTask = Observable.create(new ObservableOnSubscribe<String>() {
+            @Override
+            public void subscribe(ObservableEmitter<String> emitter) throws Exception {
+                if (!couldBeExpirableRecords) {
+                    emitter.onNext(Locale.RECORD_CAN_NOT_BE_EVICTED_BECAUSE_NO_ONE_IS_EXPIRABLE);
+                    emitter.onComplete();
+                    return;
+                }
 
-        int storedMB = persistence.storedMB();
+                int storedMB = persistence.storedMB();
 
-        if (!reachedPercentageMemoryToStart(storedMB)) {
-          emitter.onComplete();
-          return;
-        }
+                if (!reachedPercentageMemoryToStart(storedMB)) {
+                    emitter.onComplete();
+                    return;
+                }
 
-        List<String> allKeys = persistence.allKeys();
+                List<String> allKeys = persistence.allKeys();
 
-        float releasedMBSoFar = 0f;
-        for (String key : allKeys) {
-          if (reachedPercentageMemoryToStop(storedMB, releasedMBSoFar)) {
-            break;
-          }
+                float releasedMBSoFar = 0f;
+                for (String key : allKeys) {
+                    if (reachedPercentageMemoryToStop(storedMB, releasedMBSoFar)) {
+                        break;
+                    }
 
-          Record record = persistence.retrieveRecord(key, isEncrypted, encryptKey);
-          if (record == null) continue;
-          if (!record.getExpirable()) continue;
+                    Record record = persistence.retrieveRecord(key, isEncrypted, encryptKey);
+                    if (record == null) continue;
+                    if (!record.getExpirable()) continue;
 
-          persistence.evict(key);
-          emitter.onNext(key);
+                    persistence.evict(key);
+                    emitter.onNext(key);
 
-          releasedMBSoFar += record.getSizeOnMb();
-        }
+                    releasedMBSoFar += record.getSizeOnMb();
+                }
 
-        couldBeExpirableRecords = reachedPercentageMemoryToStop(storedMB, releasedMBSoFar);
-        emitter.onComplete();
-      }
-    }).subscribeOn((Schedulers.io()))
-        .observeOn(Schedulers.io())
-        .doOnError(new Consumer<Throwable>() {
-          @Override public void accept(Throwable throwable) throws Exception {
-            throwable.printStackTrace();
-          }
-        });
+                couldBeExpirableRecords = reachedPercentageMemoryToStop(storedMB, releasedMBSoFar);
+                emitter.onComplete();
+            }
+        }).subscribeOn((Schedulers.io()))
+                .observeOn(Schedulers.io())
+                .doOnError(throwable -> throwable.printStackTrace());
 
-    return oEvictingTask.share();
-  }
+        return oEvictingTask.share();
+    }
 
-  private boolean reachedPercentageMemoryToStop(int storedMBWhenStarted, float releasedMBSoFar) {
-    float currentStoredMB = storedMBWhenStarted - releasedMBSoFar;
-    float requiredStoredMBToStop = maxMgPersistenceCache * PERCENTAGE_MEMORY_STORED_TO_STOP;
-    return currentStoredMB <= requiredStoredMBToStop;
-  }
+    private boolean reachedPercentageMemoryToStop(int storedMBWhenStarted, float releasedMBSoFar) {
+        float currentStoredMB = storedMBWhenStarted - releasedMBSoFar;
+        float requiredStoredMBToStop = maxMgPersistenceCache * PERCENTAGE_MEMORY_STORED_TO_STOP;
+        return currentStoredMB <= requiredStoredMBToStop;
+    }
 
-  private boolean reachedPercentageMemoryToStart(int storedMB) {
-    int requiredStoredMBToStart = (int) (maxMgPersistenceCache * PERCENTAGE_MEMORY_STORED_TO_START);
-    return storedMB >= requiredStoredMBToStart;
-  }
+    private boolean reachedPercentageMemoryToStart(int storedMB) {
+        int requiredStoredMBToStart = (int) (maxMgPersistenceCache * PERCENTAGE_MEMORY_STORED_TO_START);
+        return storedMB >= requiredStoredMBToStart;
+    }
 }

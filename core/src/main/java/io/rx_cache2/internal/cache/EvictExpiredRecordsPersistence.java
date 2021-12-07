@@ -16,7 +16,7 @@
 
 package io.rx_cache2.internal.cache;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import io.rx_cache2.internal.Memory;
 import io.rx_cache2.internal.Persistence;
 import io.rx_cache2.internal.Record;

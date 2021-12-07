@@ -1,1 +1,3 @@
-include ':core', ':android', ':compiler', ':runtime'
+include ':core'
+include ':compiler'
+include ':runtime'

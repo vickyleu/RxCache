@@ -16,7 +16,7 @@
 
 package io.rx_cache2;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 
 /**
  * Helper class to build an Observable to evict all the data associated with a provider.

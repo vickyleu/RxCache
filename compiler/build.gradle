@@ -1,36 +1,32 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-group = 'com.github.VictorAlbertos'
-version='1.8.0-2.x'
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'com.github.vickyleu'
+version = '1.0.0'
 
 dependencies {
-    //compile files("${System.properties['java.home']}/../lib/tools.jar")
-    compile files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
-
-    compile project(':core')
-    compile project(':runtime')
-
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
-    compile 'com.squareup:javapoet:1.9.0'
-
-    testCompile "junit:junit:4.12"
-    testCompile "com.google.testing.compile:compile-testing:0.10"
+    compileOnly files("${project.properties['org.gradle.java.home']}/lib/tools.jar")
+    implementation project(':core')
+    implementation project(':runtime')
+    //noinspection AnnotationProcessorOnCompilePath
+    implementation 'com.google.auto.service:auto-service:1.0-rc2'
+    implementation 'com.squareup:javapoet:1.13.0'
 }
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives sourcesJar
-    archives javadocJar
+afterEvaluate {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = 'com.github.vickyleu'
+                artifactId = 'rxcache_compiler'
+                version = '1.0.0'
+                from components.java
+            }
+        }
+    }
 }

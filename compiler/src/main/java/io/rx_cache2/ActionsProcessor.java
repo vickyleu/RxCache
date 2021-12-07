@@ -41,7 +41,8 @@ public final class ActionsProcessor extends AbstractProcessor {
     private GetProvidersClass getProvidersClass;
     private BrewJavaFile brewJavaFile;
 
-    @Override public synchronized void init(ProcessingEnvironment env) {
+    @Override
+    public synchronized void init(ProcessingEnvironment env) {
         super.init(env);
         this.messager = env.getMessager();
         this.filer = env.getFiler();
@@ -49,11 +50,13 @@ public final class ActionsProcessor extends AbstractProcessor {
         this.brewJavaFile = new BrewJavaFile();
     }
 
-    @Override public SourceVersion getSupportedSourceVersion() {
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latestSupported();
     }
 
-    @Override public boolean process(Set<? extends TypeElement> elements, RoundEnvironment roundEnv) {
+    @Override
+    public boolean process(Set<? extends TypeElement> elements, RoundEnvironment roundEnv) {
         for (Element element : roundEnv.getRootElements()) {
             try {
                 ProvidersClass testClass = getProvidersClass.from(element);
@@ -72,7 +75,8 @@ public final class ActionsProcessor extends AbstractProcessor {
         return false;
     }
 
-    @Override public Set<String> getSupportedAnnotationTypes() {
+    @Override
+    public Set<String> getSupportedAnnotationTypes() {
         Set<String> annotations = new LinkedHashSet();
         annotations.add(Actionable.class.getCanonicalName());
         return annotations;

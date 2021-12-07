@@ -16,7 +16,7 @@
 
 package io.rx_cache2;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import io.rx_cache2.internal.Locale;
 
 public final class ConfigProvider {

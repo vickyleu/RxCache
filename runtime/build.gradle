@@ -1,32 +1,29 @@
-apply plugin: 'java'
-apply plugin: 'maven'
-group = 'com.github.VictorAlbertos'
-version='1.8.0-2.x'
-
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
+plugins {
+    id 'java'
+    id 'maven-publish'
 }
 
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+group = 'com.github.vickyleu'
+version = '1.0.0'
 
 dependencies {
-    compile 'com.github.VictorAlbertos.Jolyglot:api:0.0.4'
-    compile project(':core')
+    implementation 'com.github.vickyleu.Jolyglot:api:1.0.0'
+    implementation project(':core')
+}
 
-    testCompile 'com.github.VictorAlbertos.Jolyglot:gson:0.0.4'
-    testCompile 'com.github.VictorAlbertos.Jolyglot:jackson:0.0.4'
-    testCompile 'com.github.VictorAlbertos.Jolyglot:moshi:0.0.4'
-    testCompile 'junit:junit:4.12'
+afterEvaluate {
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                groupId = 'com.github.vickyleu'
+                artifactId = 'rxcache_runtime'
+                version = '1.0.0'
+                from components.java
+            }
+        }
+    }
 }

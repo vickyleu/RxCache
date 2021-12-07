@@ -16,55 +16,44 @@
 
 package io.rx_cache2.internal.migration;
 
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.functions.Function;
-import io.rx_cache2.MigrationCache;
-import io.rx_cache2.internal.Persistence;
 import java.util.List;
+
 import javax.inject.Inject;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.core.ObservableSource;
+import io.reactivex.rxjava3.functions.Function;
+import io.rx_cache2.MigrationCache;
+import io.rx_cache2.internal.Persistence;
+
 public final class DoMigrations {
-  private final io.rx_cache2.internal.migration.GetCacheVersion getCacheVersion;
-  private final io.rx_cache2.internal.migration.GetPendingMigrations getPendingMigrations;
-  private final io.rx_cache2.internal.migration.DeleteRecordMatchingClassName
-      deleteRecordMatchingClassName;
-  private final io.rx_cache2.internal.migration.UpgradeCacheVersion upgradeCacheVersion;
-  private final GetClassesToEvictFromMigrations getClassesToEvictFromMigrations;
-  private final List<MigrationCache> migrations;
+    private final io.rx_cache2.internal.migration.GetCacheVersion getCacheVersion;
+    private final io.rx_cache2.internal.migration.GetPendingMigrations getPendingMigrations;
+    private final io.rx_cache2.internal.migration.DeleteRecordMatchingClassName
+            deleteRecordMatchingClassName;
+    private final io.rx_cache2.internal.migration.UpgradeCacheVersion upgradeCacheVersion;
+    private final GetClassesToEvictFromMigrations getClassesToEvictFromMigrations;
+    private final List<MigrationCache> migrations;
 
-  @Inject public DoMigrations(Persistence persistence, List<MigrationCache> migrations,
-      String encryptKey) {
-    this.getClassesToEvictFromMigrations = new GetClassesToEvictFromMigrations();
-    this.getCacheVersion = new io.rx_cache2.internal.migration.GetCacheVersion(persistence);
-    this.getPendingMigrations = new io.rx_cache2.internal.migration.GetPendingMigrations();
-    this.migrations = migrations;
-    this.upgradeCacheVersion = new io.rx_cache2.internal.migration.UpgradeCacheVersion(persistence);
-    this.deleteRecordMatchingClassName = new io.rx_cache2.internal.migration.DeleteRecordMatchingClassName(persistence, encryptKey);
-  }
+    @Inject
+    public DoMigrations(Persistence persistence, List<MigrationCache> migrations,
+                        String encryptKey) {
+        this.getClassesToEvictFromMigrations = new GetClassesToEvictFromMigrations();
+        this.getCacheVersion = new io.rx_cache2.internal.migration.GetCacheVersion(persistence);
+        this.getPendingMigrations = new io.rx_cache2.internal.migration.GetPendingMigrations();
+        this.migrations = migrations;
+        this.upgradeCacheVersion = new io.rx_cache2.internal.migration.UpgradeCacheVersion(persistence);
+        this.deleteRecordMatchingClassName = new io.rx_cache2.internal.migration.DeleteRecordMatchingClassName(persistence, encryptKey);
+    }
 
-  public Observable<Integer> react() {
-    return getCacheVersion.react()
-        .flatMap(new Function<Integer, ObservableSource<List<MigrationCache>>>() {
-          @Override public ObservableSource<List<MigrationCache>> apply(Integer currentCacheVersion)
-              throws Exception {
-            return getPendingMigrations.with(currentCacheVersion, migrations).react();
-          }
-        })
-        .flatMap(new Function<List<MigrationCache>, ObservableSource<List<Class>>>() {
-          @Override public ObservableSource<List<Class>> apply(List<MigrationCache> migrationCaches)
-              throws Exception {
-            return getClassesToEvictFromMigrations.with(migrationCaches).react();
-          }
-        }).flatMap(new Function<List<Class>, ObservableSource<Integer>>() {
-          @Override public ObservableSource<Integer> apply(List<Class> classes) throws Exception {
-            return deleteRecordMatchingClassName.with(classes).react();
-          }
-        })
-        .flatMap(new Function<Integer, ObservableSource<Integer>>() {
-          @Override public ObservableSource<Integer> apply(Integer ignore) throws Exception {
-            return upgradeCacheVersion.with(migrations).react();
-          }
-        });
-  }
+    public Observable<Integer> react() {
+        return getCacheVersion.react()
+                .flatMap((Function<Integer, ObservableSource<List<MigrationCache>>>) currentCacheVersion ->
+                        getPendingMigrations.with(currentCacheVersion, migrations).react())
+                .flatMap((Function<List<MigrationCache>, ObservableSource<List<Class>>>) migrationCaches ->
+                        getClassesToEvictFromMigrations.with(migrationCaches).react())
+                .flatMap((Function<List<Class>, ObservableSource<Integer>>) classes ->
+                        deleteRecordMatchingClassName.with(classes).react())
+                .flatMap((Function<Integer, ObservableSource<Integer>>) ignore -> upgradeCacheVersion.with(migrations).react());
+    }
 }

@@ -16,7 +16,7 @@
 
 package io.rx_cache2.internal;
 
-import io.reactivex.Observable;
+import io.reactivex.rxjava3.core.Observable;
 import io.victoralbertos.jolyglot.JolyglotGenerics;
 import java.io.File;
 import java.lang.reflect.Proxy;
