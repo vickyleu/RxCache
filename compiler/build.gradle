@@ -6,7 +6,7 @@ plugins {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-group = 'com.github.vickyleu'
+group = 'com.github.vickyleu.rxcache'
 version = '1.0.0'
 
 dependencies {
@@ -22,8 +22,8 @@ afterEvaluate {
     publishing {
         publications {
             maven(MavenPublication) {
-                groupId = 'com.github.vickyleu'
-                artifactId = 'rxcache_compiler'
+                groupId = 'com.github.vickyleu.rxcache'
+                artifactId = 'compiler'
                 version = '1.0.0'
                 from components.java
             }
