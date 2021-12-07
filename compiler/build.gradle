@@ -9,16 +9,10 @@ targetCompatibility = 1.8
 group = 'com.github.vickyleu.rxcache'
 version = '1.0.0'
 
-dependencies {
 
-    def names = []
-    fileTree("${System.properties['java.home']}").visit { FileVisitDetails details ->
-        names << details.file.path
-    }
-    println("JAVA_HOME===>>${System.properties['java.home']}")
-    println("files:${names.toListString()}")
-    compileOnly files("${System.properties['java.home']}/lib/tools.jar")
-//    compileOnly files("${System.properties['JAVA_HOME']}/lib/tools.jar")
+
+dependencies {
+    compileOnly fileTree(dir: 'libs', include: ['tools.jar'])
     implementation project(':core')
     implementation project(':runtime')
     //noinspection AnnotationProcessorOnCompilePath
