@@ -13,12 +13,13 @@ version = '1.0.0'
 
 dependencies {
     compileOnly fileTree(dir: 'libs', include: ['tools.jar'])
-    implementation project(':core')
-    implementation project(':runtime')
+    compileOnly project(':core')
+    compileOnly project(':runtime')
     //noinspection AnnotationProcessorOnCompilePath
     implementation 'com.google.auto.service:auto-service:1.0-rc2'
     implementation 'com.squareup:javapoet:1.13.0'
-
+    compileOnly 'io.reactivex.rxjava3:rxjava:3.1.3'
+    compileOnly "org.glassfish:javax.annotation:10.0-b28"
 }
 
 afterEvaluate {
